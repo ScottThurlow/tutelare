@@ -44,7 +44,7 @@ Day-to-day flow:
 
 ## Deploy pipeline
 
-Two environments, both on GoDaddy **cPanel** shared hosting. Build runs **server-side** on cPanel via `.cpanel.yml`. No CI deploys, no artifact branches — cPanel Git Version Control pulls source branches directly.
+Two environments, both on GoDaddy **cPanel** shared hosting. Build runs **in GitHub Actions**, and the built `dist/` is committed back to the source branch by CI; cPanel just rsyncs static files. Reason: GoDaddy's plan does not include Node.js Selector, so server-side `npm run build` via `.cpanel.yml` is unavailable.
 
 | Environment | Source branch | cPanel docroot |
 |---|---|---|
@@ -55,30 +55,34 @@ Two environments, both on GoDaddy **cPanel** shared hosting. Build runs **server
 
 1. Engineer works in a feature branch (any name), tests locally via `npm run dev`.
 2. Engineer opens PR against `main`. Scott reviews, merges (admin bypass since solo).
-3. CI runs a build-check (`astro check && astro build`) on the PR and on the `main`/`prod` branches — catches build errors before they hit cPanel.
-4. On cPanel → Git Version Control → Manage → **Update from Remote + Deploy HEAD Commit** → cPanel pulls latest `main`, runs `.cpanel.yml`, which: detects the branch, sets `DEPLOYPATH` accordingly, installs deps, builds Astro, rsyncs `dist/` to the webroot.
+3. CI (`build-and-deploy.yml`) on push to `main`:
+   - Builds Astro with `SITE_URL=https://ppe.tutelare.ai`
+   - Force-adds `dist/` (which is otherwise gitignored), commits with `[skip ci]`, pushes back to `main` using the `CI_PUSH_TOKEN` PAT
+   - The `[skip ci]` marker prevents an infinite loop
+4. On cPanel → Git Version Control → Manage → **Update from Remote + Deploy HEAD Commit** → cPanel pulls latest `main` (which now includes the built `dist/`), runs `.cpanel.yml`, which rsyncs `dist/` to the PPE webroot.
 5. Verify `ppe.tutelare.ai`.
 
 **To promote to production:**
 
 1. Locally: `git checkout prod && git merge main && git push origin prod`
-2. On cPanel for the production site: Git Version Control → **Update from Remote + Deploy HEAD Commit**
-3. cPanel pulls latest `prod`, runs the same `.cpanel.yml`, deploys to the prod webroot.
+2. CI rebuilds with `SITE_URL=https://tutelare.ai`, commits dist/ to `prod`
+3. On cPanel for the production site: Git Version Control → **Update from Remote + Deploy HEAD Commit**
+4. cPanel pulls latest `prod`, rsyncs `dist/` to the prod webroot.
 
 **`.cpanel.yml` lives at the repo root** and is the single source of truth for the deploy logic. Branch-aware: detects whether `main` or `prod` is checked out and chooses the right `DEPLOYPATH`. To change deploy paths or build steps, edit `.cpanel.yml` in a PR.
 
-**Server-side build constraints:**
-- Requires Node installed on cPanel via *Setup Node.js App* (under Software). The path in `.cpanel.yml` (`/home/k7sqbol3loif/nodevenv/tutelare-build/22/bin`) must match the actual Node.js App location.
-- Shared-hosting RAM caps may cause OOM. For a 5-page Astro site this is borderline; if it fails, fall back to committing built `dist/` from CI to the source branch (see "Fallback" below).
+**Required GitHub repo secret**:
+- `CI_PUSH_TOKEN` — fine-grained PAT tied to Scott's account, scope: Contents Write on this repo. CI uses it for the `git push` after building. Because the PAT carries Scott's identity, it inherits the main-branch ruleset bypass automatically. **Rotate yearly** (set a calendar reminder when generating).
 
-**Fallback if server-side build fails:**
-- Add a step to the CI workflow that builds, commits `dist/` back to `main`/`prod`, and pushes with a PAT (Scott's admin bypass).
-- Simplify `.cpanel.yml` to skip the `npm ci && npm run build` lines and just rsync `dist/` to webroot.
+**Why `dist/` is in `.gitignore` even though CI commits it:**
+- Humans should not commit `dist/` — it's a build output, not source. The gitignore entry prevents accidental local commits.
+- CI uses `git add -f dist/` to force-add, overriding the gitignore for the build artifact commit.
+- If you ever see a `dist/` commit authored by anyone other than CI (commit message ending in `[skip ci]`), that's a bug — revert it.
 
 **Indexing quirks:**
 - PPE should always be noindex, even after production launch. Don't reverse the robots.txt block on `ppe.tutelare.ai` ever — it's not a public surface.
-- The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`. Currently `.cpanel.yml` does not set `SITE_URL`; we should add that (TODO).
-- `LAUNCHED` env var also not set in `.cpanel.yml` yet — needed before flipping prod to indexable at soft launch.
+- The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`.
+- To enable indexing on production at soft launch: edit `.github/workflows/build-and-deploy.yml`, find the `prod` branch in the "Determine deploy target" step, change `launched=false` to `launched=true`. PR, merge, push to prod.
 
 ## Voice and tone
 

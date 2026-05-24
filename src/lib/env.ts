@@ -16,8 +16,10 @@
  * only exposes PUBLIC_* and built-in vars to the build, not arbitrary
  * shell env. These flags are server/build-only, so `process.env` is correct.
  */
+// Use `||` not `??` so that an empty-string env var (which CI sometimes
+// produces from missing step outputs) falls back to the default.
 export const SITE_URL: string =
-  process.env.SITE_URL ?? "https://tutelare.ai";
+  process.env.SITE_URL || "https://tutelare.ai";
 
 export const IS_LAUNCHED: boolean = process.env.LAUNCHED === "true";
 

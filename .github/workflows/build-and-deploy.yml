@@ -1,22 +1,24 @@
-name: Build check
+name: Build and deploy
 
 on:
   push:
     branches: [main, prod]
-  pull_request:
-    branches: [main]
   workflow_dispatch: {}
 
-# No deploys from CI. cPanel pulls source branches directly and runs
-# the build server-side via .cpanel.yml. This workflow only verifies
-# that the source builds cleanly, catching errors before they hit
-# the cPanel deploy.
+# Skip when CI itself committed (avoids infinite loop after dist/ push).
+# Combined with [skip ci] in commit messages; either gate alone would suffice.
 jobs:
-  build-check:
+  build-and-commit:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Use the PAT so subsequent push carries Scott's identity and
+          # inherits the ruleset bypass automatically.
+          token: ${{ secrets.CI_PUSH_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -24,13 +26,45 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Determine deploy target
+        id: target
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/prod" ]; then
+            echo "site_url=https://tutelare.ai" >> "$GITHUB_OUTPUT"
+            echo "launched=false" >> "$GITHUB_OUTPUT"
+            echo "label=production" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_url=https://ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
+            echo "launched=false" >> "$GITHUB_OUTPUT"
+            echo "label=PPE" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check and build
+      - name: Build for ${{ steps.target.outputs.label }}
         env:
-          # Local-build SITE_URL doesn't really matter for the check;
-          # use production so canonical URLs at least look right.
-          SITE_URL: https://tutelare.ai
-          LAUNCHED: false
+          SITE_URL: ${{ steps.target.outputs.site_url }}
+          LAUNCHED: ${{ steps.target.outputs.launched }}
         run: npm run build
+
+      - name: Check for dist/ changes
+        id: changes
+        run: |
+          # dist/ is gitignored locally but force-added in CI.
+          git add -f dist/
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to dist/, skipping commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push dist/
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "Scott Thurlow"
+          git config user.email "scott@thurlow.ca"
+          git commit -m "build: deploy ${{ github.sha }} to ${{ steps.target.outputs.label }} [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}

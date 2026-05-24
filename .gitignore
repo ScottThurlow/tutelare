@@ -21,8 +21,11 @@
 # Claude Code (local user settings only — keep shared config in repo)
 .claude/settings.local.json
 
-# Node / Astro (added pre-emptively; populated in next commit)
+# Node / Astro
 node_modules/
-dist/
 .astro/
 *.log
+
+# dist/ is built by CI and force-added there; do not commit locally.
+# CI uses `git add -f dist/` to override this entry; humans should not.
+dist/
