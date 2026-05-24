@@ -1,0 +1,32 @@
+---
+title: "Risk-tiering AI-generated changes: a working sketch"
+summary: "Not all AI-generated code carries equal risk. A methodology for routing scarce human review attention to the changes where it matters most."
+date: 2026-08-01
+status: draft
+---
+
+> This is a placeholder. Scott writes the real prose before publication.
+
+## The problem in one paragraph
+
+Code review was designed for the volume and tempo of human authorship. It assumed
+that every line entering the codebase had passed through a human's working memory.
+That assumption no longer holds at AI-generation volume. Teams either drown trying
+to maintain the old discipline, or quietly relax it and accept whatever risk follows.
+
+## Why uniform attention is the wrong response
+
+[Placeholder. The argument that "more reviewers" doesn't solve the volume problem,
+and that uniform attention to AI-generated diffs trains reviewers into rubber-stamp
+mode.]
+
+## A working sketch of tiered routing
+
+[Placeholder. A first cut at risk-tiering criteria — change size, blast radius,
+authentication/data boundaries crossed, public-API exposure, dependency surface,
+historical incident-density of the touched files.]
+
+## Open questions
+
+[Placeholder. What's calibratable from incident history vs. what requires expert
+judgment. How to avoid drift back to uniform review under deadline pressure.]

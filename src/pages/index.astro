@@ -1,0 +1,129 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import References from "../components/References.astro";
+import { getCollection } from "astro:content";
+
+const recentWriting = (await getCollection("writing", ({ data }) => data.status === "published"))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
+
+const homepageReferences = [
+  {
+    authors: "Aikido Security",
+    year: "2026",
+    title: "State of AI in security & development 2026",
+    venue: "Aikido",
+  },
+  {
+    authors: "DeBellis, D., et al.",
+    year: "2025",
+    title: "2025 state of AI-assisted software development",
+    venue: "DORA / Google Cloud",
+  },
+  {
+    authors: "Fu, Y., Liang, P., Tahir, A., Li, Z., Shahin, M., & Yu, J.",
+    year: "2025",
+    title:
+      "Security weaknesses of Copilot-generated code in GitHub projects: an empirical study",
+    venue: "ACM Transactions on Software Engineering and Methodology",
+    url: "https://doi.org/10.1145/3716848",
+  },
+  {
+    authors: "Loker, D.",
+    year: "2025",
+    title: "State of AI vs human code generation report",
+    venue: "CodeRabbit",
+  },
+];
+---
+
+<BaseLayout
+  title="Tutelare"
+  description="Tutelare helps engineering organizations scale human oversight of AI-generated code."
+>
+  <section class="mb-16">
+    <h1
+      class="font-semibold leading-tight mb-3"
+      style="font-family: var(--font-serif); font-size: clamp(2.5rem, 5vw, 3.5rem)"
+    >
+      Tutelare
+    </h1>
+    <p class="text-lg mb-2" style="color: var(--color-ink-muted)">
+      Tutelare helps engineering organizations scale human oversight of AI-generated code.
+    </p>
+    <p class="text-sm" style="color: var(--color-ink-muted)">
+      <em>Latin: to safeguard.</em>
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-xl font-semibold mb-4" style="font-family: var(--font-serif)">
+      The problem
+    </h2>
+    <p>
+      AI now writes roughly 24% of production code, and closer to 29% in the United States
+      (Aikido, 2026). Adoption is no longer the question: 71% of developers who write code
+      use AI to help write new code, and 66% use it to modify existing code
+      (DeBellis et al., 2025). The output is not equivalent to what humans write. Empirical
+      analysis of Copilot-generated code in real GitHub projects has documented security
+      weaknesses across commercial AI code generation tools (Fu et al., 2025), and industry
+      analysis of 470 open-source pull requests found AI-generated code introduces 1.7× more
+      issues than code written by humans (Loker, 2025). One in five organizations have
+      experienced a serious incident linked to AI-generated code; another 49% report a minor
+      one (Aikido, 2026). Traditional peer review, designed for the volume and tempo of
+      human authorship, does not scale to this.
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-xl font-semibold mb-4" style="font-family: var(--font-serif)">
+      What Tutelare does
+    </h2>
+    <p>
+      We work with VPs of Engineering and CTOs at organizations that have made the decision
+      to scale AI-assisted development. We help design and operationalize oversight
+      structures that direct human attention to the highest-risk AI-generated code while
+      adversarial AI handles routine review. <a href="/services">See engagement types →</a>
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-xl font-semibold mb-4" style="font-family: var(--font-serif)">
+      The approach
+    </h2>
+    <p>
+      The central thesis: scarce human review attention should be routed by statistical
+      quality control — risk-tiering changes by impact, sampling cleared code, letting
+      adversarial AI handle the routine, building accountability structures fit for
+      human-AI authoring teams. <a href="/approach">Read the longer argument →</a>
+    </p>
+  </section>
+
+  {
+    recentWriting.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-4" style="font-family: var(--font-serif)">
+          Recent writing
+        </h2>
+        <ul class="m-0 p-0 list-none flex flex-col gap-4">
+          {recentWriting.map((piece) => (
+            <li>
+              <a
+                href={`/writing/${piece.id}`}
+                class="no-underline block"
+                style="color: var(--color-ink)"
+              >
+                <p class="m-0 font-medium">{piece.data.title}</p>
+                <p class="m-0 text-sm" style="color: var(--color-ink-muted)">
+                  {piece.data.summary}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <References references={homepageReferences} />
+</BaseLayout>

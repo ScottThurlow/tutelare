@@ -1,0 +1,9 @@
+# Pre-launch: block all crawlers.
+# At soft launch, replace this file's contents with:
+#   User-agent: *
+#   Allow: /
+#   Sitemap: https://tutelare.ai/sitemap-index.xml
+# See CLAUDE.md for the full launch checklist.
+
+User-agent: *
+Disallow: /

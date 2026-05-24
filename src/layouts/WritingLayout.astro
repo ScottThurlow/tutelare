@@ -1,0 +1,46 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title: string;
+  summary: string;
+  date: Date;
+}
+
+const { title, summary, date } = Astro.props;
+
+const formattedDate = date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<BaseLayout title={title} description={summary}>
+  <article
+    class="prose prose-lg max-w-none"
+    style="font-size: var(--text-reading); line-height: var(--leading-reading);"
+  >
+    <header class="mb-10 pb-8" style="border-bottom: 1px solid var(--color-rule)">
+      <p class="text-sm uppercase tracking-wide mb-3" style="color: var(--color-ink-muted)">
+        {formattedDate}
+      </p>
+      <h1
+        class="font-semibold leading-tight mb-4"
+        style="font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem);"
+      >
+        {title}
+      </h1>
+      <p class="text-lg" style="color: var(--color-ink-muted)">{summary}</p>
+    </header>
+    <slot />
+    <footer class="mt-16 pt-8 text-sm" style="border-top: 1px solid var(--color-rule); color: var(--color-ink-muted)">
+      <p>
+        Written by Scott Thurlow. Read more
+        <a href="/writing">writing</a>
+        or learn about
+        <a href="/about">Tutelare</a>.
+      </p>
+    </footer>
+  </article>
+</BaseLayout>

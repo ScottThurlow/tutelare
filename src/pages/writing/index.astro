@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const pieces = (await getCollection("writing", ({ data }) => data.status === "published"))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<BaseLayout
+  title="Writing"
+  description="Perspective pieces from Tutelare on scaling human oversight of AI-generated code."
+>
+  <h1
+    class="font-semibold leading-tight mb-6"
+    style="font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem)"
+  >
+    Writing
+  </h1>
+
+  {
+    pieces.length === 0 ? (
+      <p style="color: var(--color-ink-muted)">
+        <em>The first perspective piece will appear here at soft launch.</em>
+      </p>
+    ) : (
+      <ul class="m-0 p-0 list-none flex flex-col gap-8">
+        {pieces.map((piece) => (
+          <li>
+            <article>
+              <p class="text-sm m-0 mb-1" style="color: var(--color-ink-muted)">
+                <time datetime={piece.data.date.toISOString()}>
+                  {piece.data.date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+              </p>
+              <h2
+                class="font-semibold m-0 mb-2"
+                style="font-family: var(--font-serif); font-size: 1.5rem"
+              >
+                <a
+                  href={`/writing/${piece.id}`}
+                  class="no-underline"
+                  style="color: var(--color-ink)"
+                >
+                  {piece.data.title}
+                </a>
+              </h2>
+              <p class="m-0" style="color: var(--color-ink-muted)">
+                {piece.data.summary}
+              </p>
+            </article>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>
