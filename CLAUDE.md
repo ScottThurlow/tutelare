@@ -44,35 +44,34 @@ Day-to-day flow:
 
 ## Deploy pipeline
 
-Two environments, both on GoDaddy **cPanel** shared hosting (SSH enabled):
+Two environments, both on GoDaddy **cPanel** shared hosting. Deploys are **pull-based** via cPanel Git Version Control — Scott manually clicks Deploy in cPanel after each push. Reason: GoDaddy's firewall silently blocks GitHub Actions IPs on FTP ports (port 21). Port 22 (SFTP) IS reachable but only via the main cPanel account — that loses the per-environment chroot isolation. Pull-from-GitHub avoids the firewall issue entirely and trades automation for a click per deploy.
 
-| Environment | Source trigger | Hostname | Deploy target |
+| Environment | Source trigger | Artifact branch | cPanel docroot |
 |---|---|---|---|
-| Production | push to `main` | `tutelare.ai` | document root via FTPS |
-| PPE | any PR opened/updated against `main` | `ppe.tutelare.ai` | PPE subdomain document root via FTPS |
+| Production | push to `main` | `prod` | the path in `CPANEL_DEPLOY_PATH_PROD` |
+| PPE | any PR opened/updated against `main` | `ppe` | the path in `CPANEL_DEPLOY_PATH_PPE` |
+
+Flow:
 
 1. GitHub Actions (`.github/workflows/build-and-deploy.yml`) runs on push to `main` AND on PR against `main`.
 2. Determines the deploy target from the event type, sets `SITE_URL` and `LAUNCHED` env vars accordingly.
 3. Builds the Astro site (`npm ci && npm run build`).
-4. Uses `SamKirkland/FTP-Deploy-Action` to FTPS the `dist/` contents to the appropriate document root on cPanel.
-5. The action keeps a `.ftp-deploy-sync-state.json` on the server to do incremental syncs: new and changed files upload, locally-deleted files get removed server-side. Files the action never uploaded (notably `.htaccess`) are preserved.
-
-**Required GitHub repo secrets** (Settings → Secrets and variables → Actions → Secrets):
-- `CPANEL_FTP_HOST` — FTPS hostname (e.g. `ftp.tutelare.ai`)
-- `CPANEL_FTP_USERNAME` — cPanel FTP user (e.g. `ppe@tutelare.ai`); use a separate FTP user per environment for chroot isolation
-- `CPANEL_FTP_PASSWORD` — FTP user password
+4. Generates a `.cpanel.yml` deploy manifest in `dist/` with the target document root pulled from the GitHub repo variable.
+5. Force-pushes the `dist/` contents (including the generated `.cpanel.yml`) to the `prod` or `ppe` orphan branch.
+6. On cPanel: **Git Version Control → Manage → Pull or Deploy** → **Update from Remote** (fetches latest artifact from GitHub) → **Deploy HEAD Commit** (runs `.cpanel.yml` which rsyncs into the docroot, preserving any existing `.htaccess`).
 
 **Required GitHub repo variables** (Settings → Secrets and variables → Actions → Variables):
-- `CPANEL_DEPLOY_PATH_PROD` — deploy path relative to the FTP user's chroot home, e.g. `.` if the user lands directly in the webroot, or `public_html` if in the cPanel home
-- `CPANEL_DEPLOY_PATH_PPE` — same convention for the PPE FTP user; for `ppe@tutelare.ai` chrooted to the PPE webroot, this is `.`
+- `CPANEL_DEPLOY_PATH_PROD` — absolute path on the cPanel server, e.g. `/home/USERNAME/public_html`
+- `CPANEL_DEPLOY_PATH_PPE` — absolute path for the PPE subdomain docroot (find it in cPanel → Domains)
 
-If any of these are unset, the workflow build still succeeds but the deploy step is skipped with a clear warning in the run log.
+**No GitHub→GoDaddy connection is needed.** All GoDaddy-direction connectivity is initiated *by cPanel*, when Scott clicks Deploy. The `CPANEL_FTP_*` secrets from the earlier FTPS attempt are vestigial and can be deleted from repo settings.
 
 **PPE quirks to know**:
 - Multiple PRs open at once = last PR push wins on PPE. For solo workflow this is fine; if collaborators show up, add a `staging` source branch and require explicit promotion.
 - PPE should always be noindex, even after production launch. Don't reverse the robots.txt block on `ppe.tutelare.ai` ever — it's not a public surface.
 - The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`.
-- We do **not** use deploy branches (no `prod` or `ppe` orphan branches). FTPS-from-CI is the single deploy mechanism.
+
+The `prod` and `ppe` branches are the **only** places force-pushes are allowed. The main-branch ruleset blocks force-pushes everywhere else.
 
 ## Voice and tone
 
