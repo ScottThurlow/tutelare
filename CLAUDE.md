@@ -44,34 +44,41 @@ Day-to-day flow:
 
 ## Deploy pipeline
 
-Two environments, both on GoDaddy **cPanel** shared hosting. Deploys are **pull-based** via cPanel Git Version Control — Scott manually clicks Deploy in cPanel after each push. Reason: GoDaddy's firewall silently blocks GitHub Actions IPs on FTP ports (port 21). Port 22 (SFTP) IS reachable but only via the main cPanel account — that loses the per-environment chroot isolation. Pull-from-GitHub avoids the firewall issue entirely and trades automation for a click per deploy.
+Two environments, both on GoDaddy **cPanel** shared hosting. Build runs **server-side** on cPanel via `.cpanel.yml`. No CI deploys, no artifact branches — cPanel Git Version Control pulls source branches directly.
 
-| Environment | Source trigger | Artifact branch | cPanel docroot |
-|---|---|---|---|
-| Production | push to `main` | `prod` | the path in `CPANEL_DEPLOY_PATH_PROD` |
-| PPE | any PR opened/updated against `main` | `ppe` | the path in `CPANEL_DEPLOY_PATH_PPE` |
+| Environment | Source branch | cPanel docroot |
+|---|---|---|
+| PPE | `main` | `/home/k7sqbol3loif/ppe.tutelare.ai` (see `.cpanel.yml`) |
+| Production | `prod` | `/home/k7sqbol3loif/tutelare.ai` (see `.cpanel.yml`) |
 
-Flow:
+**Engineer workflow:**
 
-1. GitHub Actions (`.github/workflows/build-and-deploy.yml`) runs on push to `main` AND on PR against `main`.
-2. Determines the deploy target from the event type, sets `SITE_URL` and `LAUNCHED` env vars accordingly.
-3. Builds the Astro site (`npm ci && npm run build`).
-4. Generates a `.cpanel.yml` deploy manifest in `dist/` with the target document root pulled from the GitHub repo variable.
-5. Force-pushes the `dist/` contents (including the generated `.cpanel.yml`) to the `prod` or `ppe` orphan branch.
-6. On cPanel: **Git Version Control → Manage → Pull or Deploy** → **Update from Remote** (fetches latest artifact from GitHub) → **Deploy HEAD Commit** (runs `.cpanel.yml` which rsyncs into the docroot, preserving any existing `.htaccess`).
+1. Engineer works in a feature branch (any name), tests locally via `npm run dev`.
+2. Engineer opens PR against `main`. Scott reviews, merges (admin bypass since solo).
+3. CI runs a build-check (`astro check && astro build`) on the PR and on the `main`/`prod` branches — catches build errors before they hit cPanel.
+4. On cPanel → Git Version Control → Manage → **Update from Remote + Deploy HEAD Commit** → cPanel pulls latest `main`, runs `.cpanel.yml`, which: detects the branch, sets `DEPLOYPATH` accordingly, installs deps, builds Astro, rsyncs `dist/` to the webroot.
+5. Verify `ppe.tutelare.ai`.
 
-**Required GitHub repo variables** (Settings → Secrets and variables → Actions → Variables):
-- `CPANEL_DEPLOY_PATH_PROD` — absolute path on the cPanel server, e.g. `/home/USERNAME/public_html`
-- `CPANEL_DEPLOY_PATH_PPE` — absolute path for the PPE subdomain docroot (find it in cPanel → Domains)
+**To promote to production:**
 
-**No GitHub→GoDaddy connection is needed.** All GoDaddy-direction connectivity is initiated *by cPanel*, when Scott clicks Deploy. The `CPANEL_FTP_*` secrets from the earlier FTPS attempt are vestigial and can be deleted from repo settings.
+1. Locally: `git checkout prod && git merge main && git push origin prod`
+2. On cPanel for the production site: Git Version Control → **Update from Remote + Deploy HEAD Commit**
+3. cPanel pulls latest `prod`, runs the same `.cpanel.yml`, deploys to the prod webroot.
 
-**PPE quirks to know**:
-- Multiple PRs open at once = last PR push wins on PPE. For solo workflow this is fine; if collaborators show up, add a `staging` source branch and require explicit promotion.
+**`.cpanel.yml` lives at the repo root** and is the single source of truth for the deploy logic. Branch-aware: detects whether `main` or `prod` is checked out and chooses the right `DEPLOYPATH`. To change deploy paths or build steps, edit `.cpanel.yml` in a PR.
+
+**Server-side build constraints:**
+- Requires Node installed on cPanel via *Setup Node.js App* (under Software). The path in `.cpanel.yml` (`/home/k7sqbol3loif/nodevenv/tutelare-build/22/bin`) must match the actual Node.js App location.
+- Shared-hosting RAM caps may cause OOM. For a 5-page Astro site this is borderline; if it fails, fall back to committing built `dist/` from CI to the source branch (see "Fallback" below).
+
+**Fallback if server-side build fails:**
+- Add a step to the CI workflow that builds, commits `dist/` back to `main`/`prod`, and pushes with a PAT (Scott's admin bypass).
+- Simplify `.cpanel.yml` to skip the `npm ci && npm run build` lines and just rsync `dist/` to webroot.
+
+**Indexing quirks:**
 - PPE should always be noindex, even after production launch. Don't reverse the robots.txt block on `ppe.tutelare.ai` ever — it's not a public surface.
-- The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`.
-
-The `prod` and `ppe` branches are the **only** places force-pushes are allowed. The main-branch ruleset blocks force-pushes everywhere else.
+- The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`. Currently `.cpanel.yml` does not set `SITE_URL`; we should add that (TODO).
+- `LAUNCHED` env var also not set in `.cpanel.yml` yet — needed before flipping prod to indexable at soft launch.
 
 ## Voice and tone
 

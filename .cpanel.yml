@@ -1,0 +1,49 @@
+---
+# cPanel Git Version Control deploy manifest.
+#
+# When Scott clicks "Update from Remote + Deploy HEAD Commit" in cPanel,
+# this runs. cwd is the cloned repo directory.
+#
+# Logic: detect the checked-out branch, then set SITE_URL / LAUNCHED /
+# DEPLOYPATH, install deps, build the Astro site, and rsync the resulting
+# dist/ to the right webroot.
+#
+# Paths below are for cPanel account k7sqbol3loif on GoDaddy.
+# If actual paths differ (look in cPanel -> Domains -> Document Root),
+# edit this file in a PR — do not edit on the cPanel server.
+#
+# To enable indexing on production at soft launch:
+#   - Change `LAUNCHED=false` to `LAUNCHED=true` in the `prod) ... ;;` block
+
+deployment:
+  tasks:
+    # Resolve PATH so node/npm are available. This assumes Scott set up
+    # cPanel "Setup Node.js App" with application root = tutelare-build.
+    # Adjust the path below to match the actual Node.js App location.
+    - export PATH=/home/k7sqbol3loif/nodevenv/tutelare-build/22/bin:$PATH
+
+    # Determine deploy target from the checked-out branch.
+    - |
+      BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+      case "$BRANCH" in
+        prod)
+          export DEPLOYPATH=/home/k7sqbol3loif/tutelare.ai
+          export SITE_URL=https://tutelare.ai
+          export LAUNCHED=false   # flip to "true" at soft launch
+          ;;
+        main|*)
+          export DEPLOYPATH=/home/k7sqbol3loif/ppe.tutelare.ai
+          export SITE_URL=https://ppe.tutelare.ai
+          export LAUNCHED=false   # PPE is never indexable
+          ;;
+      esac
+      echo "Deploying branch $BRANCH to $DEPLOYPATH (SITE_URL=$SITE_URL LAUNCHED=$LAUNCHED)"
+
+    # Install dependencies from lockfile (clean, reproducible).
+    - npm ci
+
+    # Build the Astro site. SITE_URL and LAUNCHED were exported above.
+    - npm run build
+
+    # Sync built output to the webroot. Preserves any existing .htaccess.
+    - /usr/bin/rsync -av --delete --exclude='.htaccess' dist/ $DEPLOYPATH/

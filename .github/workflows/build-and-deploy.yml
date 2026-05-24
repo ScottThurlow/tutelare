@@ -1,21 +1,18 @@
-name: Build and deploy
+name: Build check
 
 on:
   push:
-    branches: [main]
+    branches: [main, prod]
   pull_request:
     branches: [main]
   workflow_dispatch: {}
 
-permissions:
-  contents: write
-
-concurrency:
-  group: deploy-${{ github.event_name == 'pull_request' && 'ppe' || 'prod' }}
-  cancel-in-progress: false
-
+# No deploys from CI. cPanel pulls source branches directly and runs
+# the build server-side via .cpanel.yml. This workflow only verifies
+# that the source builds cleanly, catching errors before they hit
+# the cPanel deploy.
 jobs:
-  build-and-deploy:
+  build-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,61 +24,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Determine deploy target
-        id: target
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # PPE is NEVER indexable, regardless of launch state.
-            echo "branch=ppe" >> "$GITHUB_OUTPUT"
-            echo "site_url=https://ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
-            echo "launched=false" >> "$GITHUB_OUTPUT"
-            echo "label=PPE" >> "$GITHUB_OUTPUT"
-            echo "deploy_path=${{ vars.CPANEL_DEPLOY_PATH_PPE }}" >> "$GITHUB_OUTPUT"
-          else
-            # Production. Flip `launched` to "true" at soft launch.
-            echo "branch=prod" >> "$GITHUB_OUTPUT"
-            echo "site_url=https://tutelare.ai" >> "$GITHUB_OUTPUT"
-            echo "launched=false" >> "$GITHUB_OUTPUT"
-            echo "label=production" >> "$GITHUB_OUTPUT"
-            echo "deploy_path=${{ vars.CPANEL_DEPLOY_PATH_PROD }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Build for ${{ steps.target.outputs.label }}
+      - name: Type-check and build
         env:
-          SITE_URL: ${{ steps.target.outputs.site_url }}
-          LAUNCHED: ${{ steps.target.outputs.launched }}
+          # Local-build SITE_URL doesn't really matter for the check;
+          # use production so canonical URLs at least look right.
+          SITE_URL: https://tutelare.ai
+          LAUNCHED: false
         run: npm run build
-
-      - name: Generate .cpanel.yml for ${{ steps.target.outputs.label }}
-        env:
-          DEPLOY_PATH: ${{ steps.target.outputs.deploy_path }}
-        run: |
-          if [ -z "$DEPLOY_PATH" ]; then
-            echo "::warning::CPANEL_DEPLOY_PATH variable not set for this target. cPanel deploy will fail until repo variable is configured."
-            DEPLOY_PATH="/PATH/NOT/SET"
-          fi
-          cat > dist/.cpanel.yml <<EOF
-          ---
-          deployment:
-            tasks:
-              - export DEPLOYPATH=${DEPLOY_PATH}
-              - /usr/bin/rsync -av --delete --exclude='.git' --exclude='.cpanel.yml' --exclude='.gitignore' --exclude='.htaccess' . \$DEPLOYPATH/
-          EOF
-
-      - name: Publish dist/ to ${{ steps.target.outputs.branch }} branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACT_BRANCH: ${{ steps.target.outputs.branch }}
-        run: |
-          set -euo pipefail
-          cd dist
-          git init -q
-          git checkout -q -b "$ARTIFACT_BRANCH"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -q -m "Deploy ${{ github.sha }} to $ARTIFACT_BRANCH"
-          git push --force --quiet "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "${ARTIFACT_BRANCH}:${ARTIFACT_BRANCH}"
