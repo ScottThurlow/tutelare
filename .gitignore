@@ -29,3 +29,7 @@ node_modules/
 # dist/ is built by CI and force-added there; do not commit locally.
 # CI uses `git add -f dist/` to override this entry; humans should not.
 dist/
+
+# AI oversight protocol
+# prompts/ and AGENTS.md are always committed — never ignore them
+.ai-local/
