@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import { GA_MEASUREMENT_ID } from "../consts";
 
 interface Props {
   title: string;
@@ -14,6 +15,8 @@ const { title, description, ogImage = "/og-default.png" } = Astro.props;
 const siteTitle = "Tutelare";
 const fullTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+const analyticsEnabled = import.meta.env.PROD && Boolean(GA_MEASUREMENT_ID);
 ---
 
 <!doctype html>
@@ -44,6 +47,24 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
     <meta name="twitter:title" content={fullTitle} />
     {description && <meta name="twitter:description" content={description} />}
     <meta name="twitter:image" content={new URL(ogImage, Astro.site).toString()} />
+
+    {
+      analyticsEnabled && (
+        <>
+          <script
+            is:inline
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          />
+          <script is:inline define:vars={{ id: GA_MEASUREMENT_ID }}>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', id);
+          </script>
+        </>
+      )
+    }
   </head>
   <body class="min-h-screen flex flex-col">
     <Header />
