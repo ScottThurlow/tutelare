@@ -8,7 +8,7 @@ Tutelare is a practice of **Teneo Group LLC** (Bellevue, WA).
 
 Detailed development instructions will be added in the next commit, alongside the Astro project scaffold.
 
-In short: Astro 5 + Tailwind 4 + MDX, static output, deployed via GitHub Actions over FTPS to cPanel on GoDaddy.
+In short: Astro 5 + Tailwind 4 + MDX, static output. GitHub Actions builds and pushes artifacts to a `prod`/`ppe` branch; cPanel Git Version Control pulls on demand.
 
 ## Branch protection
 
