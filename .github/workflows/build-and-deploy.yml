@@ -50,28 +50,28 @@ jobs:
           LAUNCHED: ${{ steps.target.outputs.launched }}
         run: npm run build
 
-      - name: Check SFTP credentials
+      - name: Check FTPS credentials
         id: creds
         env:
-          SFTP_HOST: ${{ secrets.CPANEL_SFTP_HOST }}
+          FTP_HOST: ${{ secrets.CPANEL_FTP_HOST }}
           DEPLOY_PATH: ${{ steps.target.outputs.deploy_path }}
         run: |
-          if [ -n "$SFTP_HOST" ] && [ -n "$DEPLOY_PATH" ]; then
+          if [ -n "$FTP_HOST" ] && [ -n "$DEPLOY_PATH" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::SFTP credentials or deploy path not configured; build succeeded but deploy was skipped. Set CPANEL_SFTP_HOST/USERNAME/PASSWORD secrets and CPANEL_DEPLOY_PATH_PROD/PPE variables to enable deployment."
+            echo "::warning::FTPS credentials or deploy path not configured; build succeeded but deploy was skipped. Set CPANEL_FTP_HOST/USERNAME/PASSWORD secrets and CPANEL_DEPLOY_PATH_PROD/PPE variables to enable deployment."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy to ${{ steps.target.outputs.label }} via SFTP
+      - name: Deploy to ${{ steps.target.outputs.label }} via FTPS
         if: steps.creds.outputs.ready == 'true'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          protocol: sftp
-          server: ${{ secrets.CPANEL_SFTP_HOST }}
-          port: 22
-          username: ${{ secrets.CPANEL_SFTP_USERNAME }}
-          password: ${{ secrets.CPANEL_SFTP_PASSWORD }}
+          protocol: ftps
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          port: 21
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: ${{ steps.target.outputs.deploy_path }}/
           state-name: .ftp-deploy-sync-state.json
