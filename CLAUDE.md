@@ -46,10 +46,10 @@ Day-to-day flow:
 
 1. GitHub Actions (`.github/workflows/build-and-deploy.yml`) runs on push to `main`
 2. Builds the Astro site (`npm ci && npm run build`)
-3. Force-pushes the `dist/` contents to a `deploy` branch (orphan, single commit, history overwritten each deploy)
-4. Plesk Git extension on GoDaddy watches the `deploy` branch and pulls into the site's webroot
+3. Force-pushes the `dist/` contents to the `prod` branch (orphan, single commit, history overwritten each deploy)
+4. Plesk Git extension on GoDaddy watches the `prod` branch and pulls into the site's webroot
 
-The `deploy` branch is the **only** place force-pushes are allowed. The main-branch ruleset blocks force-pushes everywhere else.
+The `prod` branch is the **only** place force-pushes are allowed. The main-branch ruleset blocks force-pushes everywhere else.
 
 ## Voice and tone
 
