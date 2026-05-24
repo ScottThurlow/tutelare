@@ -7,9 +7,6 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-permissions:
-  contents: write
-
 concurrency:
   group: deploy-${{ github.event_name == 'pull_request' && 'ppe' || 'prod' }}
   cancel-in-progress: false
@@ -32,16 +29,16 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             # PPE is NEVER indexable, regardless of launch state.
-            echo "branch=ppe" >> "$GITHUB_OUTPUT"
             echo "site_url=https://ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
             echo "launched=false" >> "$GITHUB_OUTPUT"
             echo "label=PPE" >> "$GITHUB_OUTPUT"
+            echo "deploy_path=${{ vars.CPANEL_DEPLOY_PATH_PPE }}" >> "$GITHUB_OUTPUT"
           else
-            # Production. Flip `launched` to "true" at soft launch to enable indexing.
-            echo "branch=prod" >> "$GITHUB_OUTPUT"
+            # Production. Flip `launched` to "true" at soft launch.
             echo "site_url=https://tutelare.ai" >> "$GITHUB_OUTPUT"
             echo "launched=false" >> "$GITHUB_OUTPUT"
             echo "label=production" >> "$GITHUB_OUTPUT"
+            echo "deploy_path=${{ vars.CPANEL_DEPLOY_PATH_PROD }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install dependencies
@@ -53,17 +50,28 @@ jobs:
           LAUNCHED: ${{ steps.target.outputs.launched }}
         run: npm run build
 
-      - name: Publish dist/ to ${{ steps.target.outputs.branch }} branch
+      - name: Check SFTP credentials
+        id: creds
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACT_BRANCH: ${{ steps.target.outputs.branch }}
+          SFTP_HOST: ${{ secrets.CPANEL_SFTP_HOST }}
+          DEPLOY_PATH: ${{ steps.target.outputs.deploy_path }}
         run: |
-          set -euo pipefail
-          cd dist
-          git init -q
-          git checkout -q -b "$ARTIFACT_BRANCH"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -q -m "Deploy ${{ github.sha }} to $ARTIFACT_BRANCH"
-          git push --force --quiet "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "${ARTIFACT_BRANCH}:${ARTIFACT_BRANCH}"
+          if [ -n "$SFTP_HOST" ] && [ -n "$DEPLOY_PATH" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::SFTP credentials or deploy path not configured; build succeeded but deploy was skipped. Set CPANEL_SFTP_HOST/USERNAME/PASSWORD secrets and CPANEL_DEPLOY_PATH_PROD/PPE variables to enable deployment."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to ${{ steps.target.outputs.label }} via SFTP
+        if: steps.creds.outputs.ready == 'true'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          protocol: sftp
+          server: ${{ secrets.CPANEL_SFTP_HOST }}
+          port: 22
+          username: ${{ secrets.CPANEL_SFTP_USERNAME }}
+          password: ${{ secrets.CPANEL_SFTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ steps.target.outputs.deploy_path }}/
+          state-name: .ftp-deploy-sync-state.json

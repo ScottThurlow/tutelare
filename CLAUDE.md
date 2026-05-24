@@ -44,25 +44,35 @@ Day-to-day flow:
 
 ## Deploy pipeline
 
-Two environments, both on GoDaddy Plesk shared hosting:
+Two environments, both on GoDaddy **cPanel** shared hosting (SSH enabled):
 
-| Environment | Source trigger | Artifact branch | Hostname |
+| Environment | Source trigger | Hostname | Deploy target |
 |---|---|---|---|
-| Production | push to `main` | `prod` | `tutelare.ai` |
-| PPE | any PR opened/updated against `main` | `ppe` | `ppe.tutelare.ai` |
+| Production | push to `main` | `tutelare.ai` | document root via SFTP |
+| PPE | any PR opened/updated against `main` | `ppe.tutelare.ai` | PPE subdomain document root via SFTP |
 
 1. GitHub Actions (`.github/workflows/build-and-deploy.yml`) runs on push to `main` AND on PR against `main`.
-2. Determines the deploy target from the event type, sets `SITE_URL` env var accordingly (so canonical/OG URLs are correct per environment).
+2. Determines the deploy target from the event type, sets `SITE_URL` and `LAUNCHED` env vars accordingly.
 3. Builds the Astro site (`npm ci && npm run build`).
-4. Force-pushes the `dist/` contents to either the `prod` branch or the `ppe` branch, depending on target.
-5. Plesk Git extension on each GoDaddy site watches its respective artifact branch and pulls into the site's webroot.
+4. Uses `SamKirkland/FTP-Deploy-Action` to SFTP the `dist/` contents to the appropriate document root on cPanel.
+5. The action keeps a `.ftp-deploy-sync-state.json` on the server to do incremental syncs: new and changed files upload, locally-deleted files get removed server-side. Files the action never uploaded (notably `.htaccess`) are preserved.
+
+**Required GitHub repo secrets** (Settings → Secrets and variables → Actions → Secrets):
+- `CPANEL_SFTP_HOST` — SFTP hostname (e.g. `tutelare.ai` or the cPanel server hostname)
+- `CPANEL_SFTP_USERNAME` — cPanel account username
+- `CPANEL_SFTP_PASSWORD` — cPanel account password (or, for key-based auth, swap to using `key` input with SSH private key in `CPANEL_SFTP_KEY` secret)
+
+**Required GitHub repo variables** (Settings → Secrets and variables → Actions → Variables):
+- `CPANEL_DEPLOY_PATH_PROD` — absolute path on the cPanel server, e.g. `/home/USERNAME/public_html`
+- `CPANEL_DEPLOY_PATH_PPE` — absolute path for the PPE subdomain, e.g. `/home/USERNAME/ppe.tutelare.ai`
+
+If any of these are unset, the workflow build still succeeds but the deploy step is skipped with a clear warning in the run log.
 
 **PPE quirks to know**:
 - Multiple PRs open at once = last PR push wins on PPE. For solo workflow this is fine; if collaborators show up, add a `staging` source branch and require explicit promotion.
 - PPE should always be noindex, even after production launch. Don't reverse the robots.txt block on `ppe.tutelare.ai` ever — it's not a public surface.
 - The site URL Astro bakes into canonical/OG tags is environment-specific. Don't hard-code `tutelare.ai` anywhere — read from `Astro.site` which honors the `SITE_URL` env var via `astro.config.mjs`.
-
-The `prod` and `ppe` branches are the **only** places force-pushes are allowed. The main-branch ruleset blocks force-pushes everywhere else.
+- We do **not** use deploy branches (no `prod` or `ppe` orphan branches). SFTP-from-CI is the single deploy mechanism.
 
 ## Voice and tone
 
