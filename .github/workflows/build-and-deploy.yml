@@ -33,13 +33,13 @@ jobs:
             echo "site_url=https://tutelare.ai" >> "$GITHUB_OUTPUT"
             echo "launched=false" >> "$GITHUB_OUTPUT"
             echo "label=production" >> "$GITHUB_OUTPUT"
-            echo "deploy_path=/home/k7sqbol3loif/tutelare.ai" >> "$GITHUB_OUTPUT"
+            echo "deploy_path=/home/${{ vars.CPANEL_ACCOUNT_ID }}/tutelare.ai" >> "$GITHUB_OUTPUT"
           else
             echo "artifact_branch=ppe-deploy" >> "$GITHUB_OUTPUT"
             echo "site_url=https://ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
             echo "launched=false" >> "$GITHUB_OUTPUT"
             echo "label=PPE" >> "$GITHUB_OUTPUT"
-            echo "deploy_path=/home/k7sqbol3loif/ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
+            echo "deploy_path=/home/${{ vars.CPANEL_ACCOUNT_ID }}/ppe.tutelare.ai" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install dependencies
