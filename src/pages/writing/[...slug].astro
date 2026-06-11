@@ -1,0 +1,23 @@
+---
+import WritingLayout from "../../layouts/WritingLayout.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const pieces = await getCollection("writing", ({ data }) => data.status === "published");
+  return pieces.map((piece) => ({
+    params: { slug: piece.id },
+    props: { piece },
+  }));
+}
+
+const { piece } = Astro.props;
+const { Content } = await render(piece);
+---
+
+<WritingLayout
+  title={piece.data.title}
+  summary={piece.data.summary}
+  date={piece.data.date}
+>
+  <Content />
+</WritingLayout>

@@ -1,0 +1,41 @@
+---
+interface Reference {
+  authors: string;
+  year: string;
+  title: string;
+  venue?: string;
+  url?: string;
+}
+
+interface Props {
+  references: Reference[];
+}
+
+const { references } = Astro.props;
+---
+
+<aside
+  class="mt-12 pt-6 text-sm"
+  style="border-top: 1px solid var(--color-rule); color: var(--color-ink-muted)"
+>
+  <h2 class="text-xs uppercase tracking-wider font-semibold mb-3 mt-0" style="color: var(--color-ink)">
+    References
+  </h2>
+  <ol class="m-0 pl-5 flex flex-col gap-2">
+    {
+      references.map((ref) => (
+        <li>
+          {ref.authors} ({ref.year}).{" "}
+          {ref.url ? (
+            <a href={ref.url} rel="noopener">
+              {ref.title}
+            </a>
+          ) : (
+            <em>{ref.title}</em>
+          )}
+          {ref.venue && <>. {ref.venue}</>}.
+        </li>
+      ))
+    }
+  </ol>
+</aside>
