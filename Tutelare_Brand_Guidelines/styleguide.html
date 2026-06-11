@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tutelare · Brand & Web Style Guide</title>
+<link rel="icon" type="image/svg+xml" href="svg/tutelare-app-icon.svg" />
+<link rel="stylesheet" href="tutelare.css" />
+<style>
+  /* page-specific scaffolding only — everything else comes from tutelare.css */
+  .gh { padding-block: var(--s-9) var(--s-8); border-bottom: 1px solid var(--line); }
+  .gh__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-6); flex-wrap: wrap; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: var(--s-4); }
+  .sw { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .sw__chip { height: 84px; }
+  .sw__meta { padding: var(--s-3) var(--s-4); }
+  .sw__name { font-weight: 600; color: var(--navy); font-size: 0.95rem; }
+  .sw__hex { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.04em; }
+  .specimen { display: grid; grid-template-columns: 92px 1fr; gap: var(--s-5); align-items: baseline; padding-block: var(--s-4); border-top: 1px solid var(--line); }
+  .specimen__tag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; padding-top: 0.5em; }
+  .logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: var(--s-5); }
+  .logo-cell { border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-7) var(--s-6); display: flex; align-items: center; justify-content: center; min-height: 150px; }
+  .logo-cell--dark { background: var(--navy); border-color: transparent; }
+  .logo-cell__cap { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-align: center; margin-top: var(--s-3); }
+  .stack { display: flex; gap: var(--s-3); flex-wrap: wrap; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- ===================== Masthead ===================== -->
+<header class="gh">
+  <div class="container">
+    <div class="gh__row">
+      <img src="svg/tutelare-lockup.svg" alt="Tutelare" width="320" />
+      <span class="badge">Brand &amp; Web Style Guide · v1</span>
+    </div>
+    <p class="lead" style="margin-top: var(--s-6); max-width: 56ch;">
+      A clean, institutional system for an AI strategy &amp; governance practice —
+      built around the <strong>Scan</strong> mark: a watch-point on an axis of observation.
+    </p>
+  </div>
+</header>
+
+<!-- ===================== Logo ===================== -->
+<section class="section">
+  <div class="container">
+    <p class="eyebrow">01 · Logo</p>
+    <h2>The mark &amp; its lockups</h2>
+    <p class="prose">The symbol is fully geometric — a ring, an axis, and a core — so it stays crisp
+      from a 16px favicon to a building sign. Use the lockup wherever space allows; the standalone
+      mark for avatars, app icons, and tight spaces. Keep clear space of at least the ring's diameter on all sides.</p>
+
+    <div class="logo-grid" style="margin-top: var(--s-6);">
+      <div>
+        <div class="logo-cell"><img src="svg/tutelare-mark.svg" alt="Tutelare mark" width="96" /></div>
+        <p class="logo-cell__cap">Mark · primary</p>
+      </div>
+      <div>
+        <div class="logo-cell logo-cell--dark"><img src="svg/tutelare-mark-reverse.svg" alt="Tutelare mark reverse" width="96" /></div>
+        <p class="logo-cell__cap">Mark · reverse</p>
+      </div>
+      <div>
+        <div class="logo-cell"><img src="svg/tutelare-app-icon.svg" alt="Tutelare app icon" width="92" /></div>
+        <p class="logo-cell__cap">App icon</p>
+      </div>
+      <div>
+        <div class="logo-cell"><img src="svg/tutelare-lockup.svg" alt="Tutelare lockup" width="200" /></div>
+        <p class="logo-cell__cap">Horizontal lockup</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Color ===================== -->
+<section class="section section--tint">
+  <div class="container">
+    <p class="eyebrow">02 · Color</p>
+    <h2>Palette</h2>
+    <p class="prose">Deep institutional navy carries the brand; a single technical teal does the
+      accenting (links, highlights, the axis). On dark fields, swap teal for the brighter cyan.
+      Keep saturation restrained — the system should read trustworthy, not loud.</p>
+
+    <div class="swatches" style="margin-top: var(--s-6);">
+      <div class="sw"><div class="sw__chip" style="background:#14233E"></div><div class="sw__meta"><div class="sw__name">Navy</div><div class="sw__hex">#14233E · --navy</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#0D1729"></div><div class="sw__meta"><div class="sw__name">Navy 900</div><div class="sw__hex">#0D1729 · --navy-900</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#168E9C"></div><div class="sw__meta"><div class="sw__name">Teal</div><div class="sw__hex">#168E9C · --teal</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#4BC8D2"></div><div class="sw__meta"><div class="sw__name">Cyan</div><div class="sw__hex">#4BC8D2 · --cyan</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#3A4658"></div><div class="sw__meta"><div class="sw__name">Slate</div><div class="sw__hex">#3A4658 · --slate</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#7C8796"></div><div class="sw__meta"><div class="sw__name">Muted</div><div class="sw__hex">#7C8796 · --muted</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#F7F8FA"></div><div class="sw__meta"><div class="sw__name">Paper</div><div class="sw__hex">#F7F8FA · --paper</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E4F2F3"></div><div class="sw__meta"><div class="sw__name">Teal wash</div><div class="sw__hex">#E4F2F3 · --teal-100</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Type ===================== -->
+<section class="section">
+  <div class="container">
+    <p class="eyebrow">03 · Typography</p>
+    <h2>Type system</h2>
+    <p class="prose"><strong>Hanken Grotesk</strong> — a humanist sans — carries everything: warm enough to feel
+      human-centered, precise enough to feel expert. <strong>JetBrains Mono</strong> handles eyebrows, labels,
+      and data. That's the whole system: two families, used with discipline.</p>
+
+    <div style="margin-top: var(--s-6);">
+      <div class="specimen"><div class="specimen__tag">DISPLAY</div><div class="display">Scaling human oversight</div></div>
+      <div class="specimen"><div class="specimen__tag">H1 · 700</div><div><h1 style="margin:0;">Govern AI with confidence</h1></div></div>
+      <div class="specimen"><div class="specimen__tag">H2 · 600</div><div><h2 style="margin:0;">Strategy, risk &amp; assurance</h2></div></div>
+      <div class="specimen"><div class="specimen__tag">H3 · 600</div><div><h3 style="margin:0;">Oversight that scales with you</h3></div></div>
+      <div class="specimen"><div class="specimen__tag">LEAD</div><div><p class="lead" style="margin:0;">A measured, forward-looking advisory practice for organizations adopting AI at scale.</p></div></div>
+      <div class="specimen"><div class="specimen__tag">BODY · 17</div><div><p style="margin:0;">Tutelare helps boards and engineering leaders design the controls, review processes, and human-in-the-loop checkpoints that keep AI systems accountable as they grow.</p></div></div>
+      <div class="specimen"><div class="specimen__tag">EYEBROW</div><div><span class="eyebrow" style="margin:0;">AI Governance · Advisory</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Components ===================== -->
+<section class="section section--tint">
+  <div class="container">
+    <p class="eyebrow">04 · Components</p>
+    <h2>Building blocks</h2>
+
+    <h3>Buttons</h3>
+    <div class="stack" style="margin-bottom: var(--s-6);">
+      <a class="btn">Book an assessment</a>
+      <a class="btn btn--accent">Get the framework</a>
+      <a class="btn btn--ghost">Read our approach</a>
+    </div>
+
+    <h3>Cards</h3>
+    <div class="grid grid--3" style="margin-top: var(--s-5);">
+      <div class="card"><p class="eyebrow">Assess</p><h3 style="margin-top:0;">Governance audit</h3><p style="margin:0;">Map where AI touches decisions, and where human oversight must sit.</p></div>
+      <div class="card"><p class="eyebrow">Design</p><h3 style="margin-top:0;">Control frameworks</h3><p style="margin:0;">Policies and checkpoints that scale with model capability.</p></div>
+      <div class="card"><p class="eyebrow">Assure</p><h3 style="margin-top:0;">Ongoing review</h3><p style="margin:0;">Standing oversight as your deployment footprint grows.</p></div>
+    </div>
+
+    <h3 style="margin-top: var(--s-8);">Quote &amp; list</h3>
+    <div class="grid grid--2">
+      <blockquote>Oversight isn't a brake on AI adoption — it's the thing that lets you accelerate safely.
+        <cite>— Tutelare point of view</cite></blockquote>
+      <ul class="ticks">
+        <li>Board-level AI risk briefings</li>
+        <li>Human-in-the-loop checkpoint design</li>
+        <li>Model evaluation &amp; red-team programs</li>
+        <li>Regulatory readiness (EU AI Act, NIST)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Dark field ===================== -->
+<section class="section section--ink">
+  <div class="container">
+    <p class="eyebrow">05 · On dark</p>
+    <h2>Reverse field</h2>
+    <p style="max-width: 56ch;">For hero sections and footers, run the system on <strong style="color:#fff;">Navy 900</strong>
+      with the reverse lockup and cyan accents. Body text drops to a soft slate for comfortable contrast.</p>
+    <div style="margin-top: var(--s-6);"><img src="svg/tutelare-lockup-reverse.svg" alt="Tutelare reverse lockup" width="300" /></div>
+    <div class="stack" style="margin-top: var(--s-6);">
+      <a class="btn btn--accent">Primary action</a>
+      <a class="badge">EU AI Act ready</a>
+    </div>
+  </div>
+</section>
+
+<footer class="section" style="padding-block: var(--s-7);">
+  <div class="container">
+    <div class="rule-taper" style="margin-bottom: var(--s-5);"></div>
+    <p class="meta" style="margin:0;">Tutelare · AI strategy &amp; governance. Stylesheet: <code>tutelare.css</code> · Fonts: Hanken Grotesk + JetBrains Mono.</p>
+  </div>
+</footer>
+
+</body>
+</html>
